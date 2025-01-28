@@ -1,0 +1,686 @@
+syntax = "proto3";
+package deepagent.node.v1;
+option go_package = "deepagent.node.v1";
+
+message CpuFeatureCacheKeyValue { map<string, string> values = 1; }
+
+// CPU 特性
+message CpuFeature {
+  string arch = 1;
+  string brand = 2;
+  string family = 3;
+  string model = 4;
+  string stepping = 5;
+  string uarch = 6;
+  string implementer = 7;
+  string architecture = 8;
+  string variant = 9;
+  string part = 10;
+  string revision = 11;
+  string platform = 12;
+  string machine = 13;
+  string cpu = 14;
+  string instruction = 15;
+  string microarchitecture = 16;
+  string processors = 17;
+  string vendor = 18;
+  repeated string flags = 19;
+  repeated CpuFeatureCacheKeyValue caches = 20;
+}
+
+message LoadAverage {
+  // 1分钟内的平均负载
+  float one = 1;
+  // 5分钟内的平均负载
+  float five = 2;
+  // 15分钟内的平均负载
+  float fifteen = 3;
+  // running processes
+  int32 running = 4;
+  // total processes
+  int32 total = 5;
+}
+
+// 环境变量键值对
+message EnvVariable {
+  string key = 1;
+  string value = 2;
+}
+
+// 机器虚拟内存信息
+message VirtualMemoryInfo {
+  // total virtual memory, /proc/meminfo/MemTotal
+  uint64 total = 1;
+  // free virtual memory, the sum of LowFree+HighFree, /proc/meminfo/MemFree
+  uint64 free = 2;
+  // used virtual memory, /proc/meminfo/SwapCached
+  uint64 swap_cached = 3;
+  // total used memory, = total - (free + Buffers(not reportd) + swap_cached)
+  uint64 used = 4;
+}
+
+// 进程内存使用情况
+// read from /proc/[pid]/statm
+message ProcessMemoryUsage {
+  // total program size, /proc/[pid]/statm/[1]
+  uint64 vm_size = 1;
+  // resident set size(rss), /proc/[pid]/statm/[2]
+  uint64 resident = 2;
+  // shared, /proc/[pid]/statm/[3]
+  uint64 shared = 3;
+  // text, /proc/[pid]/statm/[4]
+  uint64 text = 4;
+  // lib, /proc/[pid]/statm/[5]
+  uint64 lib = 5;
+  // data + stack, /proc/[pid]/statm/[6]
+  uint64 data = 6;
+  // dirty pages, /proc/[pid]/statm/[7]
+  uint64 dirty = 7;
+  // todo: vm_size / total memory size
+  float vm_pct = 9;
+  // swap memory size, /proc/[pid]/status/VmSwap
+  int64 swap = 10;
+  // resident / total memory size
+  float rss_pct = 11;
+}
+
+// R is running,
+// S is sleeping,
+// D is sleeping in an uninterruptible wait,
+// Z is zombie,
+// T is traced or stopped
+enum ProcessState {
+  Unknown = 0;          // to satisfy proto3 requirement
+  Running = 82;         // ASCII 'R'
+  Sleeping = 83;        // ASCII 'S'
+  Uninterruptible = 68; // ASCII 'D'
+  Zombie = 90;          // ASCII 'Z'
+  Traced = 84;          // ASCII 'T'
+}
+
+message ProcessGPUUsage {
+  // Amount of used GPU memory in bytes
+  int64 memory_used = 1;
+  // encoder usage
+  int64 encoder_usage = 2;
+  // decoder usage
+  int64 decoder_usage = 3;
+  // SM (3D/Compute) utility value
+  int64 sm_usage = 4;
+}
+
+// 进程信息
+message ProcessInfo {
+  // 进程id, /proc/[pid]
+  uint64 pid = 1;
+  // 进程名字, /proc/[pid]/status/Name
+  string name = 2;
+  // 进程路径, /proc/[pid]/exe
+  string path = 3;
+  // 启动命令, /proc/[pid]/cmdline
+  string cmdline = 4;
+  // 工作目录, /proc/[pid]/cwd
+  string work_dir = 5;
+  // 父进程id, /proc/[pid]/status/PPid
+  uint64 ppid = 6;
+  // 用户id, /proc/[pid]/status/Uid
+  int32 uid = 7;
+  // 用户名, 通过 getpwuid 获取
+  string user_name = 8;
+  // 组id, /proc/[pid]/status/Gid
+  int32 gid = 9;
+  // 进程状态, /proc/[pid]/status/State
+  ProcessState state = 10;
+  // 运行时长(单位为秒), /proc/uptime - (/proc/[pid]/stat/start_time[22]) / sysconf(_SC_CLK_TCK)
+  double running_time = 11;
+  // todo: /proc/[pid]/cgroup
+  string container_id = 12;
+  // 打开的文件描述符数量, /proc/[pid]/status/FDSize
+  uint64 open_fd_count = 13;
+  // 被动上下文切换次数, /proc/[pid]/status/nonvoluntary_ctxt_switches
+  uint64 involuntary_ctx_switches = 14;
+  // 主动上下文切换次数, /proc/[pid]/status/voluntary_ctxt_switches
+  uint64 voluntary_ctx_switches = 15;
+  // 优先级, /proc/[pid]/stat/[19]
+  uint64 cpu_nice = 16;
+  // 线程数量, /proc/[pid]/status/Threads
+  uint64 threads_num = 17;
+  // 环境变量, /proc/[pid]/environ
+  repeated EnvVariable env_variables = 18;
+  // 内存使用率, /proc/[pid]/statm
+  ProcessMemoryUsage memory_usage = 19;
+
+  // 读取字节数, /proc/[pid]/io/read_bytes
+  uint64 iostat_read_bytes = 20;
+  // 写入字节数, /proc/[pid]/io/write_bytes
+  uint64 iostat_write_bytes = 21;
+  // todo: 读取字节速率, diff(iostat_read_bytes) / sample_period
+  double iostat_read_bytes_rate = 22;
+  // todo: 写入字节速率, diff(iostat_write_bytes) / sample_period
+  double iostat_write_bytes_rate = 23;
+
+  // 用户态 cpu 使用时间, (/proc/[pid]/stat/utime[14]) / sysconf(_SC_CLK_TCK)
+  uint64 cpu_user_time = 24;
+  // 内核态 cpu 使用时间, (/proc/[pid]/stat/stime[15]) / sysconf(_SC_CLK_TCK)
+  uint64 cpu_system_time = 25;
+  // 用户态cpu 使用率, this.cpu_user_time / (/proc/uptime - this.running_time)
+  double cpu_user_pct = 26;
+  // Kernel CPU 使用率百分比, (this.cpu_system_time) / (/proc/uptime - this.running_time)
+  double cpu_system_pct = 27;
+  // CPU总体使用率: this.cpu_user_pct + this.cpu_system_pct
+  double cpu_total_pct = 28;
+
+  // 进程启动时间点, time(null) - running_time
+  int64 start_time = 29;
+
+  // 是否是内核进程
+  bool is_kernel_thread = 30;
+  // GPU Memory Usage
+  ProcessGPUUsage gpu_usage = 31;
+}
+
+// 容器
+message ContainerInfo {
+  // 容器id
+  string id = 1;
+  // 容器名字
+  string name = 2;
+  // 容器状态
+  string state = 3;
+  // 容器运行的命令
+  string command = 4;
+  // 容器的镜像名字
+  string image_name = 5;
+  // CPU限制
+  int64 cpu_limit = 6;
+  // CPU 用户态占比
+  double cpu_user_pct = 7;
+  // CPU 内核态占比
+  double cpu_system_pct = 8;
+  // 容器cpu使用率
+  double cpu_total_pct = 9;
+  // 容器内存使用率
+  double rss_usage = 10;
+  // 内存限制
+  int64 memory_limit = 11;
+  // 内存缓存
+  int64 memory_cache = 12;
+  // rss内存
+  int64 memory_rss = 13;
+  // 内存使用率
+  double memory_pct = 14;
+  // 容器读取的字节数
+  uint64 rx_bytes = 15;
+  // 容器读取的速率
+  double rx_bps = 16;
+  // 容器写入的字节数
+  uint64 tx_bytes = 17;
+  // 容器写入的速率
+  double tx_bps = 18;
+  // 容器网络接收速率
+  double net_rcvd_bps = 19;
+  // 容器网络发送速率
+  double net_sent_bps = 20;
+  // 容器启动时间点
+  uint64 start_time = 21;
+  // 运行时间
+  uint64 running_time = 22;
+  // 容器的地址
+  repeated string addresses = 23;
+  // 主机IP
+  repeated string host_ips = 24;
+  // pid列表
+  int32 pid = 25;
+  // pod ip
+  string pod_ip = 26;
+  // pod端口
+  repeated int32 pod_ports = 27;
+  string host = 28;
+  // 容器
+  int32 health = 29;
+  // 线程数量
+  int32 thread_count = 30;
+  // 线程限制
+  int32 thread_limit = 31;
+  // todo
+  string kube_app = 32;
+}
+
+enum DiskType {
+  Unkonwn = 0;
+  SSD = 1;
+  HDD = 2;
+}
+
+// 磁盘信息, 不能单独借助/proc 完成
+message DiskInfo {
+  // 磁盘设备
+  string device = 1;
+  // 磁盘类型
+  DiskType type = 2;
+  // 磁盘挂载点
+  string mount_point = 3;
+  // 磁盘文件系统
+  string filesystem = 4;
+  // 磁盘生产商
+  string vendor = 5;
+  // 磁盘大小(byte)
+  uint64 space_total = 6;
+  // 磁盘可用大小(byte)
+  uint64 space_free = 7;
+  // 磁盘已使用大小(byte)
+  uint64 space_used = 8;
+  // 磁盘使用率
+  double space_usage = 9;
+  // 磁盘inode总数
+  uint64 inode_total = 10;
+  // 磁盘inode总数
+  uint64 inode_free = 11;
+  // 磁盘inode总数
+  uint64 inode_used = 12;
+  // 磁盘inode使用率
+  uint64 inode_usage = 13;
+}
+
+// cgroup.stat
+message CGroupStat {
+  int32 nr_descendants = 1;
+  int32 nr_dying_descendants = 2;
+}
+
+message CGroupCPUStat {
+  // usage_usec 6951407
+  int64 usage_usec = 1;
+  // user_usec 1284698
+  int64 user_usec = 2;
+  // system_usec 5666709
+  int64 system_usec = 3;
+  // core_sched.force_idle_usec 0
+  int64 core_sched_force_idle_usec = 4;
+  // nr_periods 0
+  int32 nr_periods = 5;
+  // nr_throttled 0
+  int32 nr_throttled = 6;
+  // throttled_usec 0
+  int64 throttled_usec = 7;
+  // nr_bursts 0
+  int32 nr_bursts = 8;
+  // burst_usec 0
+  int64 burst_usec = 9;
+}
+
+message PSI {
+  float avg10 = 1;
+  float avg60 = 2;
+  float avg300 = 3;
+  float total = 4;
+}
+
+message Pressure {
+  PSI some = 1;
+  PSI full = 2;
+}
+
+message CGroupCPUMax {
+  oneof max {
+    int32 max_value = 1;
+    string max_string = 2;
+  }
+  int32 period = 3;
+}
+
+message CGroupCPUController {
+  // cpu.idle
+  int32 idle = 1;
+  // cpu.max
+  CGroupCPUMax max = 2;
+  // cpu.max.burst
+  int32 max_burst = 3;
+  // cpu.pressure
+  Pressure pressure = 4;
+  // cpu.stat
+  CGroupCPUStat stat = 5;
+  // cpu.stat.local
+  CGroupCPUStat stat_local = 6;
+  // cpu.uclamp.max
+  oneof uclamp_max {
+    int32 uclamp_max_value = 7;
+    string uclamp_max_string = 8;
+  }
+  // cpu.uclamp.min
+  float uclamp_min = 9;
+  // cpu.weight
+  int32 weight = 10;
+  // cpu.weight.nice
+  int32 weight_nice = 11;
+}
+
+message CGroupCPUSetController {
+  // cpuset.cpus
+  repeated int32 cpus = 1;
+  // cpuset.cpus.effective
+  repeated int32 cpus_effective = 2;
+  // cpuset.cpus.exclusive
+  repeated int32 cpus_exclusive = 3;
+  // cpuset.cpus.exclusive.effective
+  repeated int32 cpus_exclusive_effective = 4;
+  // cpuset.cpus.partition
+  string cpus_partition = 5;
+  // cpuset.mems
+  repeated int32 mems = 6;
+  // cpuset.mems.effective
+  repeated int32 mems_effective = 7;
+}
+
+message TLBEvents {
+  oneof max {
+    int32 max_value = 1;
+    string max_string = 2;
+  }
+  int32 period = 3;;
+}
+
+message TLBControlInfo {
+  // hugetlb.XXX.current
+  int32 current = 1;
+  // hugetlb.XXX.events
+  TLBEvents events = 2;
+  // hugetlb.XXX.events.local
+  TLBEvents events_local = 3;
+  // hugetlb.XXX.max
+  oneof max {
+    int32 max_value = 4;
+    string max_string = 5;
+  }
+  // hugetlb.XXX.numa_stat, todo
+  // hugetlb.XXX.rsvd.current
+  int32 rsvd_current = 6;
+  // hugetlb.XXX.rsvd.max
+  oneof rsvd_max {
+    int32 rsvd_max_value = 7;
+    string rsvd_max_string = 8;
+  }
+}
+
+message CGroupHugeTLBController { map<string, TLBControlInfo> tlb = 1; }
+
+message CGroupIOMax {
+  int32 major = 1;
+  int32 minor = 2;
+  oneof rbps {
+    int32 rbps_value = 3;
+    string rbps_string = 4;
+  }
+  oneof wbps {
+    int32 wbps_value = 5;
+    string wbps_string = 6;
+  }
+  oneof riops {
+    int32 riops_value = 7;
+    string riops_string = 8;
+  }
+  oneof wiops {
+    int32 wiops_value = 9;
+    string wiops_string = 10;
+  }
+}
+
+message CGroupIOStat {
+  int32 MajorDevice = 1;
+  int32 MinorDevice = 2;
+  int64 rbytes = 3;
+  int64 wbytes = 4;
+  int64 rios = 5;
+  int64 wios = 6;
+  int64 dbytes = 7;
+  int64 dios = 8;
+}
+
+message CGroupIOController {
+  // io.max
+  repeated CGroupIOMax max = 1;
+  // io.pressure
+  Pressure pressure = 2;
+  // io.prio.class
+  int32 prio_class = 3;
+  // io.stat
+  CGroupIOStat stat = 4;
+  // io.weight
+}
+
+message CGroupMemoryEvent {
+  // low 0
+  int32 low = 1;
+  // high 0
+  int32 high = 2;
+  // max 0
+  int32 max = 3;
+  // oom 0
+  int32 oom = 4;
+  // oom_kill 0
+  int32 oom_kill = 5;
+  // oom_group_kill 0
+  int32 oom_group_kill = 6;
+}
+
+message CGroupNumaStat {}
+message CGroupMemoryStat {}
+message CGroupMemorySwapEvent {
+  // high 0
+  int64 high = 1;
+  // max 0
+  int64 max = 2;
+  // fail 0
+  int64 fail = 3;
+}
+
+message CGroupMemoryController {
+  // memory.current
+  int32 current = 1;
+  // memory.events
+  CGroupMemoryEvent events = 2;
+  // memory.events.local
+  CGroupMemoryEvent events_local = 3;
+  // memory.high
+  oneof high {
+    int32 high_value = 4;
+    string high_string = 5;
+  }
+  // memory.low
+  int32 low = 6;
+  // memory.max
+  oneof max {
+    int32 max_value = 7;
+    string max_string = 8;
+  }
+  // memory.min
+  int32 min = 9;
+  // memory.numa_stat, todo
+  CGroupNumaStat numa_stat = 10;
+  // memory.oom.group
+  int32 oom_group = 11;
+  // memory.peak
+  int32 peak = 12;
+  // memory.pressure
+  Pressure pressure = 13;
+  // memory.stat
+  CGroupMemoryStat stat = 14;
+  // memory.swap.current
+  int64 swap_current = 15;
+  // memory.swap.events, todo
+  CGroupMemorySwapEvent swap_events = 16;
+  // memory.swap.high
+  oneof swap_high {
+    int32 swap_high_value = 17;
+    string swap_high_string = 18;
+  }
+  // memory.swap.max
+  oneof swap_max {
+    int32 swap_max_value = 19;
+    string swap_max_string = 20;
+  }
+  // memory.swap.peak
+  int64 swap_peak = 21;
+  // memory.zswap.current
+  int64 zswap_current = 22;
+  // memory.zswap.max
+  oneof zswap_max {
+    int32 zswap_max_value = 23;
+    string zswap_max_string = 24;
+  }
+  // memory.zswap.writeback
+  int32 zswap_writeback = 25;
+}
+
+message CGroupMiscController {
+  // misc.current
+  // misc.events
+  // misc.max
+}
+
+message CGroupPidsController {
+  // pids.current
+  int32 current = 1;
+  // pids.events
+  int32 events = 2;
+  // pids.max
+  oneof max {
+    int32 max_value = 3;
+    string max_string = 4;
+  }
+  // pids.peak
+  int32 peak = 5;
+}
+
+message CGroupRDMAController {
+  // rdma.current
+  // rdma.max
+}
+
+message CGroupEvent {
+  // populated 1
+  int32 populated = 1;
+  // frozen 0
+  int32 frozen = 2;
+}
+
+message CGroupController {
+  // cgroup.controllers
+  repeated string controllers = 1;
+  // cgroup.events
+  CGroupEvent events = 2;
+  // cgroup.freeze
+  int32 freeze = 3;
+  // cgroup.kill
+  int32 kill = 4;
+  // cgroup.max.depth
+  oneof max_depth {
+    int32 max_depth_value = 5;
+    string max_depth_string = 6;
+  }
+  // cgroup.max.descendants
+  oneof max_descendants {
+    int32 max_descendants_value = 7;
+    string max_descendants_string = 8;
+  }
+  // cgroup.pressure
+  int32 pressure = 9;
+  // cgroup.procs
+  repeated int32 procs = 10;
+  // cgroup.stat
+  CGroupStat stat = 11;
+  // cgroup.threads
+  repeated int32 threads = 12;
+  // cgroup.type
+  string type = 13;
+}
+
+message CGroupMount {
+  string mount_point = 1;
+  CGroupController cgroup = 2;
+  CGroupCPUController cpu = 3;
+  CGroupCPUSetController cpuset = 4;
+  CGroupHugeTLBController hugetlb = 5;
+  CGroupIOController io = 6;
+  CGroupMemoryController memory = 7;
+  CGroupMiscController misc = 8;
+  CGroupPidsController pids = 9;
+  CGroupRDMAController rdma = 10;
+  repeated CGroupMount children = 11;
+}
+
+// cgroup信息
+message CGroupInfo {
+  string version = 1;
+  repeated CGroupController controllers = 2;
+  CGroupMount cgroup_mount = 3;
+}
+
+// 机器信息
+message NodeInfo {
+  string company_uuid = 1;
+  // 唯一的数据id
+  uint64 host_object_id = 2;
+  // 主机名字
+  string host_name = 3;
+  // CPU核心功能
+  CpuFeature cpu_feature = 4;
+  // linux内核操作系统
+  string system_os = 5;
+  // 内核版本
+  string system_version = 6;
+  // 主机类型是kvm还是虚拟机
+  string system_type = 7;
+  // 属于的集群
+  string cluster = 8;
+  // 所属平台
+  string platform = 9;
+  // 磁盘信息
+  repeated DiskInfo disk_infos = 12;
+  // 虚拟内存信息
+  VirtualMemoryInfo virtual_memory_info = 13;
+  // ipv4
+  string ipv4 = 14;
+  // ipv6
+  string ipv6 = 15;
+  // cpu topology
+  bytes cpu_topology = 16;
+  // cgroup info
+  CGroupInfo cgroup_info = 17;
+}
+
+message NodeUsage {
+  // 唯一的数据id
+  uint64 host_object_id = 1;
+  // cpu使用率
+  uint64 cpu_value = 2;
+  // memory使用率
+  VirtualMemoryInfo memroy_usage = 3;
+}
+
+message NodeRes { int32 id = 1; }
+
+message ProcessInfoRequest {
+  uint64 host_object_id = 1;
+  uint64 series_id = 2;
+  repeated ProcessInfo processes = 3;
+  string hostname = 4;
+}
+
+message ContainerInfoRequest {
+  uint64 host_object_id = 1;
+  uint64 series_id = 2;
+  string hostname = 3;
+  repeated ContainerInfo containers = 4;
+}
+
+service NodeCollectorService {
+  // 注册node信息
+  rpc Register(NodeInfo) returns (NodeRes) {}
+  // 更新node信息
+  rpc Update(NodeUsage) returns (NodeRes) {}
+  // 更新进程信息
+  rpc ReportProcess(ProcessInfoRequest) returns (NodeRes) {}
+  // 更新容器信息
+  rpc ReportContainer(ContainerInfoRequest) returns (NodeRes) {}
+}

@@ -1,0 +1,25 @@
+// ==========================================================================
+// Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
+// ==========================================================================
+
+syntax = "proto3";
+
+package pbentity;
+
+option go_package = "/api/pbentity";
+
+import "google/protobuf/timestamp.proto";
+
+message DoAgent {
+    int32                     Id                = 1   [json_name = "id"];                  // 自增标识      
+    uint64                    ObjectId          = 2   [json_name = "object_id"];           // agent uuid    
+    string                    CompanyUuid       = 3   [json_name = "company_uuid"];        // 公司uuid      
+    string                    Name              = 4   [json_name = "name"];                // agent名字     
+    string                    Version           = 5   [json_name = "version"];             // agent版本     
+    string                    ConfigUuid        = 6   [json_name = "config_uuid"];         // 配置版本      
+    bytes                     ProcessInfo       = 7   [json_name = "process_info"];        // 进程信息      
+    google.protobuf.Timestamp LastHeartbeatTime = 8   [json_name = "last_heartbeat_time"]; // 上次心跳时间  
+    google.protobuf.Timestamp UpdateConfigTime  = 9   [json_name = "update_config_time"];  // 更新配置时间  
+    google.protobuf.Timestamp Created           = 10  [json_name = "created"];             // 创建时间      
+    int32                     IsDelete          = 11  [json_name = "is_delete"];           // 1-删除        
+}

@@ -1,0 +1,22 @@
+// ==========================================================================
+// Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
+// ==========================================================================
+
+syntax = "proto3";
+
+package pbentity;
+
+option go_package = "/api/pbentity";
+
+import "google/protobuf/timestamp.proto";
+
+message DoAgentConfig {
+    int32                     Id            = 1   [json_name = "id"];             // 自增标识                
+    string                    Uuid          = 2   [json_name = "uuid"];           // 配置 uuid               
+    string                    CompanyUuid   = 3   [json_name = "company_uuid"];   // 公司 uuid               
+    string                    ConfigVersion = 4   [json_name = "config_version"]; // 配置版本                
+    string                    Content       = 5   [json_name = "content"];        // 配置内容                
+    google.protobuf.Timestamp Created       = 6   [json_name = "created"];        // 创建时间                
+    google.protobuf.Timestamp Updated       = 7   [json_name = "updated"];        // 更新时间                
+    int32                     IsDelete      = 8   [json_name = "is_delete"];      // 状态 1 是启用，0是禁用  
+}
