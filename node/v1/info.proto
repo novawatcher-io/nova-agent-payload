@@ -1,6 +1,8 @@
 syntax = "proto3";
-package deepagent.node.v1;
-option go_package = "deepagent.node.v1";
+package novaagent.node.v1;
+option go_package = "novaagent.node.v1";
+
+
 
 message CpuFeatureCacheKeyValue { map<string, string> values = 1; }
 
@@ -616,6 +618,23 @@ message CGroupInfo {
   CGroupMount cgroup_mount = 3;
 }
 
+// 文件系统
+message FileSystemInfo {
+  // 文件系统
+  string name = 1;
+  // 文件系统类型
+  string type = 2;
+  // 大小
+  string size = 3;
+  // 已用
+  string used = 5;
+  // 可用
+  uint64 available = 6;
+  //挂载点
+  uint64 monit_point = 8;
+}
+
+
 // 机器信息
 message NodeInfo {
   string company_uuid = 1;
@@ -647,6 +666,8 @@ message NodeInfo {
   bytes cpu_topology = 16;
   // cgroup info
   CGroupInfo cgroup_info = 17;
+  // file system info
+  repeated FileSystemInfo file_system_infos = 18;
 }
 
 message NodeUsage {
