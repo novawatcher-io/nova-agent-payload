@@ -634,6 +634,48 @@ message FileSystemInfo {
   string monit_point = 8;
 }
 
+// 网络数据包统计
+message UserNetDeviceStats {
+  uint64 rx_packets = 1;	/* total packets received       */
+  uint64 tx_packets = 2;	/* total packets transmitted    */
+  uint64 rx_bytes = 3;	/* total bytes received         */
+  uint64 tx_bytes = 4;	/* total bytes transmitted      */
+  uint64 rx_errors = 5;	/* bad packets received         */
+  uint64 tx_errors = 6;	/* packet transmit problems     */
+  uint64 rx_dropped = 7;	/* no space in linux buffers    */
+  uint64 tx_dropped = 8;	/* no space available in linux  */
+  uint64 rx_multicast = 9;	/* multicast packets received   */
+  uint64 rx_compressed = 10;
+  uint64 tx_compressed = 11;
+  uint64 collisions = 12;
+
+  /* detailed rx_errors: */
+  uint64 rx_length_errors = 13;
+  uint64 rx_over_errors = 14;	/* receiver ring buff overflow  */
+  uint64 rx_crc_errors = 15;	/* recved pkt with crc error    */
+  uint64 rx_frame_errors = 16;	/* recv'd frame alignment error */
+  uint64 rx_fifo_errors = 17;	/* recv'r fifo overrun          */
+  uint64 rx_missed_errors = 18;	/* receiver missed packet     */
+  /* detailed tx_errors */
+  uint64 tx_aborted_errors = 19;
+  uint64 tx_carrier_errors = 20;
+  uint64 tx_fifo_errors = 21;
+  uint64 tx_heartbeat_errors = 22;
+  uint64 tx_window_errors = 23;
+}
+
+// 网络信息
+message NetworkInterfaceInfo {
+  string name = 1;
+  int32 type = 2;
+  int32 flags = 3;
+  int32 metric = 4;
+  int32 mtu = 5;
+  int32 tx_queue_len = 6;
+  string ip = 7;
+  string ip6 = 8;
+  UserNetDeviceStats stats = 9;
+}
 
 // 机器信息
 message NodeInfo {
@@ -668,6 +710,8 @@ message NodeInfo {
   CGroupInfo cgroup_info = 17;
   // file system info
   repeated FileSystemInfo file_system_infos = 18;
+  // network interface info
+  repeated NetworkInterfaceInfo network_interface_list = 19;
 }
 
 message NodeUsage {
