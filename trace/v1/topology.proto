@@ -1,0 +1,77 @@
+syntax = "proto3";
+package novaagent.trace.v1;
+option go_package = "novaagent.trace.v1";
+
+message Service {
+  uint64 id = 1;
+  string name = 2;
+  string namespace = 3;
+  string cluster = 4;
+  string serviceInstanceName = 5;
+  string endpointName = 6;
+  string type = 7;
+}
+
+message ServiceRelation {
+  uint64 id = 1;
+  uint64 sourceServiceId = 2;
+  string sourceServiceName = 3;
+  string sourceServiceInstanceName = 4;
+  int32 sourceLayer = 5;
+  uint64 destServiceId = 6;
+  string destServiceName = 7;
+  string destServiceInstanceName = 8;
+  int32 destLayer = 9;
+  string componentId = 10;
+  string type = 11;
+  string detectPoint = 12;
+  string sourceNamespace = 13;
+  string destNamespace = 14;
+  string cluster = 15;
+}
+
+message TopologyRes { int32 id = 1; }
+
+message ServiceMetric {
+  uint64 id = 1;
+  string name = 2;
+  string namespace = 3;
+  string cluster = 4;
+  int64 request_count = 5;
+  int64 error_count = 6;
+  double avg_time = 7;
+}
+
+message ServiceRelationMetric {
+  uint64 id = 1;
+  uint64 sourceServiceId = 2;
+  string sourceServiceName = 3;
+  string sourceServiceInstanceName = 4;
+  int32 sourceLayer = 5;
+  uint64 destServiceId = 6;
+  string destServiceName = 7;
+  string destServiceInstanceName = 8;
+  int32 destLayer = 9;
+  int64 request_count = 10;
+  int64 error_count = 11;
+  double avg_time = 12;
+  string sourceNamespace = 13;
+  string destNamespace = 14;
+  string cluster = 15;
+}
+
+message ServiceMetricRequest {
+  repeated ServiceMetric serviceMetric = 1;
+}
+
+message ServiceRelationMetricRequest {
+  repeated ServiceRelationMetric serviceRelationMetric = 1;
+}
+
+
+service TraceTopologyCollectorService {
+  rpc RegisterService(Service) returns (TopologyRes) {}
+  rpc RegisterServiceRelation(ServiceRelation) returns (TopologyRes) {}
+  rpc RegisterServiceMetric(ServiceMetricRequest) returns (TopologyRes) {}
+  rpc RegisterServiceRelationMetric(ServiceRelationMetricRequest) returns (TopologyRes) {}
+}
