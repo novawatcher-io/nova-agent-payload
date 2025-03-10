@@ -60,6 +60,7 @@ message ServiceRelationMetric {
   string destNamespace = 14;
   string cluster = 15;
   uint64 time = 16;
+  uint64 objectId = 17;
 }
 
 message ServiceMetricRequest {
