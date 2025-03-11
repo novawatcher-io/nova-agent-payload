@@ -41,6 +41,7 @@ message ServiceMetric {
   int64 error_count = 6;
   double avg_time = 7;
   uint64 time = 8;
+  uint64 objectId = 9;
 }
 
 message ServiceRelationMetric {
